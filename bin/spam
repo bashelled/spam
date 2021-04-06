@@ -99,8 +99,8 @@ pkgdel () {
      echo "$pkg is already on your computer."
    else
      echo "Installing $2 from $1..."
-     git clone https://github.com/$1 ~/.spam/usr/pkgcache/repo-$repo/$pkg
-     repopath="$HOME/.spam/usr/pkgcache/repo-$repo/$pkg"
+     git clone https://github.com/$1 ~/.spam/usr/pkgcache/repo-${repo/\//-}/$pkg
+     repopath="$HOME/.spam/usr/pkgcache/repo-${repo/\//-}/$pkg"
      pkgbox="$HOME/.spam/pkg/$pkg"
      if [[ -f "$repopath/spam/$pkg.spk" ]]; then
       mkdir -p $pkgbox

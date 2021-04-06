@@ -1,0 +1,90 @@
+#!/bin/bash
+sleep 1
+spam_ver=1.10cb1
+pause() {
+    prompt="$1"
+    echo -e -n "\033[1;36m$prompt"
+    echo -e -n '\033[0m'
+    read
+}
+
+help () {
+echo "Usage: spam <operation> [...]"
+echo "operations:"
+echo "    spam {-u --usage}"
+echo "    spam {-h --help}"
+echo "    spam {-v --version}"
+echo "    spam {-X --uninstall}"
+echo "    spam {-T --theme} [user] [theme]"
+echo "    spam {-P --pull}"
+echo ""
+echo "use 'spam {-h --help}' with an operation for available options"
+}
+
+nocommand () {
+echo "no command specified or command not found (use spam -h for help)"
+exit 1
+}
+
+version () {
+echo "Spam, Spam PAckage Manager ${spam_ver} by Bashelled"
+echo "Backends:"
+echo " * BASH version ${BASH_VERSION} by The GNU Project"
+echo " * $(git --version) by Git Developers"
+echo " * $(tar --version | grep tar) by The GNU Project"
+}
+
+update () {
+echo "Pulling spam from official mirrors..."
+if git -C $HOME/.spam pull; then
+echo "You have installed Spam version ${spam_ver}!"
+echo "See the site for more info"
+else
+	echo "There was an error updating spam."
+	exit 1
+fi
+}
+
+pkglist () {
+ls $HOME/.spam/pkg
+}
+
+ pkguse () {
+  pkg=${1/*\/}
+   if [ -e "$HOME/.spam/pkg/${pkg}" ]; then
+     echo "$pkg is already on your computer."
+   else
+     echo "Installing $1..."
+     git clone https://github.com/$1 ~/.spam/usr/pkgcache/$pkg
+     pkgpath="$HOME/.spam/usr/pkgcache/$pkg"
+     pkgbox="$HOME/.spam/pkg/$pkg"
+     if [[ -f "$pkgpath/$pkg.spk" ]]; then
+      mkdir -p $pkgbox
+      tar xvf $pkgpath/$pkg.spk -C $pkgbox
+      ln -s $pkgbox/bin/* $spam/bin
+      rm -rf $pkgpath
+      echo "Done!"
+     else
+       echo "A fatal error occured."
+       rm -rf $pkgpath
+     fi
+   fi
+ }
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+	help
+elif [[ "$1" == "-v" || "$1" == "--version" ]]; then
+	version
+elif [[ "$1" == "remove" ]]; then
+	uninstall
+elif [[ "$1" == "selfupgrade" ]]; then
+	update
+elif [[ "$1" == "install" ]]; then
+ 	if [[ -z $2 ]]; then
+ 		pkglist
+ 	else
+ 		pkguse $2
+ 	fi
+else
+	nocommand
+fi

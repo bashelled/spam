@@ -12,12 +12,11 @@ pause() {
 help () {
 echo "Usage: spam <operation> [...]"
 echo "operations:"
-echo "    spam {-u --usage}"
 echo "    spam {-h --help}"
 echo "    spam {-v --version}"
-echo "    spam {-X --uninstall}"
-echo "    spam {-T --theme} [user] [theme]"
-echo "    spam {-P --pull}"
+echo "    spam remove package"
+echo "    spam install user/package"
+echo "    spam selfupgrade"
 echo ""
 echo "use 'spam {-h --help}' with an operation for available options"
 }
@@ -35,11 +34,11 @@ echo " * $(git --version) by Git Developers"
 echo " * $(tar --version | grep tar) by The GNU Project"
 }
 
-update () {
+updatespam () {
 echo "Pulling spam from official mirrors..."
 if git -C $HOME/.spam pull; then
-echo "You have installed Spam version ${spam_ver}!"
-echo "See the site for more info"
+	echo "You have installed Spam version ${spam_ver}!"
+	echo "See the site for more info"
 else
 	echo "There was an error updating spam."
 	exit 1
@@ -56,7 +55,9 @@ pkgdel () {
      echo "$pkg is not on your computer."
    else
      echo "Removing $1..."
+     echo "* Removing symlinks..."
      rm -rf $HOME/.spam/bin/$(ls $HOME/.spam/pkg/$pkg/bin)
+     echo "* Removing package box..."
      rm -rf $HOME/.spam/pkg/$pkg
      echo "Done!"
    fi
@@ -72,13 +73,20 @@ pkgdel () {
      echo "$pkg is already on your computer."
    else
      echo "Installing $1..."
-     git clone https://github.com/$1 ~/.spam/usr/pkgcache/$pkg
+     git clone https://github.com/$1 ~/.spam/usr/pkgcache/$pkg &> /dev/null
      pkgpath="$HOME/.spam/usr/pkgcache/$pkg"
      pkgbox="$HOME/.spam/pkg/$pkg"
      if [[ -f "$pkgpath/$pkg.spk" ]]; then
+      echo "* Sourcing metadata..."
+      . $pkgpath/metadata.smd
+      echo "* Making package box..."
       mkdir -p $pkgbox
-      tar xvf $pkgpath/$pkg.spk -C $pkgbox
+      echo "* Extracting spamball and metadata to package box..."
+      tar xf $pkgpath/$pkg.spk -C $pkgbox
+      cp $pkgpath/metadata.smd $pkgbox
+      echo "* Symlinking binarys to ~/.spam/bin..."
       ln -s $pkgbox/bin/* $HOME/.spam/bin
+      echo "Deleting cache..."
       rm -rf $pkgpath
       echo "Done!"
      else
@@ -99,13 +107,20 @@ pkgdel () {
      echo "$pkg is already on your computer."
    else
      echo "Installing $2 from $1..."
-     git clone https://github.com/$1 ~/.spam/usr/pkgcache/repo-${repo/\//-}/$pkg
+     git clone https://github.com/$1 ~/.spam/usr/pkgcache/repo-${repo/\//-}/$pkg &> /dev/null
      repopath="$HOME/.spam/usr/pkgcache/repo-${repo/\//-}/$pkg"
      pkgbox="$HOME/.spam/pkg/$pkg"
      if [[ -f "$repopath/spam/$pkg.spk" ]]; then
+      echo "* Sourcing metadata..."
+      . $repopath/spam/$pkg.smd
+      echo "* Making package box..."
       mkdir -p $pkgbox
-      tar xvf $repopath/spam/$pkg.spk -C $pkgbox
+      echo "* Extracting spamball and metadata to package box..."
+      tar xf $repopath/spam/$pkg.spk -C $pkgbox
+      cp $repopath/spam/$pkg.smd $pkgbox
+      echo "* Symlinking binarys to ~/.spam/bin..."
       ln -s $pkgbox/bin/* $HOME/.spam/bin
+      echo "* Deleting cache..."
       rm -rf $repopath
       echo "Done!"
      else
@@ -123,7 +138,7 @@ elif [[ "$1" == "-v" || "$1" == "--version" ]]; then
 elif [[ "$1" == "remove" ]]; then
 	pkgdel $2
 elif [[ "$1" == "selfupgrade" ]]; then
-	update
+	updatespam
 elif [[ "$1" == "install" ]]; then
  	pkguse $2
 elif [[ "$1" == "list" ]]; then

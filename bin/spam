@@ -1,6 +1,6 @@
 #!/bin/bash
 sleep 1
-spam_ver=1.10cb1
+spam_ver=0.1.6-4
 
 pause() {
     prompt="$1"
@@ -12,13 +12,12 @@ pause() {
 help () {
 echo "Usage: spam <operation> [...]"
 echo "operations:"
-echo "    spam {-h --help}"
-echo "    spam {-v --version}"
-echo "    spam remove package"
-echo "    spam install user/package"
-echo "    spam selfupgrade"
-echo ""
-echo "use 'spam {-h --help}' with an operation for available options"
+echo "    spam -h/--help: shows this help"
+echo "    spam -v/--version: shows version"
+echo "    spam remove package: deletes a package"
+echo "    spam install user/package: installs a package"
+echo "    spam selfupgrade: upgrades spam"
+echo "    spam list: lists packages"
 }
 
 nocommand () {
@@ -64,7 +63,8 @@ pkgdel () {
 }
 
  pkguse () {
-  pkg=${1/*\/}
+  pkg=${1/*\/*\/}
+  repo=${1/\/$pkg}
   if [[ -z $1 ]]; then
    echo No command found.
    exit 1
@@ -72,43 +72,9 @@ pkgdel () {
    if [ -e "$HOME/.spam/pkg/${pkg}" ]; then
      echo "$pkg is already on your computer."
    else
-     echo "Installing $1..."
-     git clone https://github.com/$1 ~/.spam/usr/pkgcache/$pkg &> /dev/null
-     pkgpath="$HOME/.spam/usr/pkgcache/$pkg"
-     pkgbox="$HOME/.spam/pkg/$pkg"
-     if [[ -f "$pkgpath/$pkg.spk" ]]; then
-      echo "* Sourcing metadata..."
-      . $pkgpath/metadata.smd
-      echo "* Making package box..."
-      mkdir -p $pkgbox
-      echo "* Extracting spamball and metadata to package box..."
-      tar xf $pkgpath/$pkg.spk -C $pkgbox
-      cp $pkgpath/metadata.smd $pkgbox
-      echo "* Symlinking binarys to ~/.spam/bin..."
-      ln -s $pkgbox/bin/* $HOME/.spam/bin
-      echo "Deleting cache..."
-      rm -rf $pkgpath
-      echo "Done!"
-     else
-       echo "A fatal error occured."
-       rm -rf $pkgpath
-     fi
-   fi
- }
-
- rkguse () {
-  pkg=$2
-  repo=$1
-  if [[ -z $1 ]]; then
-   echo No command found.
-   exit 1
-  fi
-   if [ -e "$HOME/.spam/pkg/${pkg}" ]; then
-     echo "$pkg is already on your computer."
-   else
-     echo "Installing $2 from $1..."
-     git clone https://github.com/$1 ~/.spam/usr/pkgcache/repo-${repo/\//-}/$pkg &> /dev/null
-     repopath="$HOME/.spam/usr/pkgcache/repo-${repo/\//-}/$pkg"
+     echo "Installing $pkg from $repo..."
+     git clone https://github.com/$repo ~/.spam/usr/pkgcache/$repo/$pkg &> /dev/null
+     repopath="$HOME/.spam/usr/pkgcache/$repo/$pkg"
      pkgbox="$HOME/.spam/pkg/$pkg"
      if [[ -f "$repopath/spam/$pkg.spk" ]]; then
       echo "* Sourcing metadata..."
@@ -130,7 +96,6 @@ pkgdel () {
    fi
  }
 
-
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 	help
 elif [[ "$1" == "-v" || "$1" == "--version" ]]; then
@@ -143,8 +108,6 @@ elif [[ "$1" == "install" ]]; then
  	pkguse $2
 elif [[ "$1" == "list" ]]; then
 	pkglist
-elif [[ "$1" == "installrepo" ]]; then
-        rkguse $2 $3
 else
 	nocommand
 fi
